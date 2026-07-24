@@ -1,0 +1,65 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Create Flutter project scaffold
+        run: flutter create --platforms=android app_build
+
+      - name: Copy custom app code into scaffold
+        run: |
+          cp app_source/pubspec.yaml app_build/pubspec.yaml
+          cp app_source/lib/main.dart app_build/lib/main.dart
+          cp app_source/android/AndroidManifest.xml app_build/android/app/src/main/AndroidManifest.xml
+
+      - name: Get dependencies
+        run: cd app_build && flutter pub get
+
+      - name: Enable core library desugaring
+        run: |
+          python3 - << 'EOF'
+          path = "app_build/android/app/build.gradle.kts"
+          with open(path) as f:
+              content = f.read()
+
+          if "isCoreLibraryDesugaringEnabled" not in content:
+              content = content.replace(
+                  "compileOptions {",
+                  "compileOptions {\n        isCoreLibraryDesugaringEnabled = true",
+                  1
+              )
+
+          if "desugar_jdk_libs" not in content:
+              if "dependencies {" in content:
+                  content = content.replace(
+                      "dependencies {",
+                      "dependencies {\n    coreLibraryDesugaring(\"com.android.tools:desugar_jdk_libs:2.1.4\")",
+                      1
+                  )
+              else:
+                  content += '\ndependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")\n}\n'
+
+          with open(path, "w") as f:
+              f.write(content)
+          EOF
+
+      - name: Build APK
+        run: cd app_build && flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: match-reminder-apk
+          path: app_build/build/app/outputs/flutter-apk/app-release.apk
