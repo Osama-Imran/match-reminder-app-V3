@@ -87,15 +87,26 @@ class Team {
   final String name;
   final String league;
   final String badge;
+  final String idLeague;
   Team(
       {required this.id,
       required this.name,
       required this.league,
-      required this.badge});
-  Map<String, dynamic> toJson() =>
-      {'id': id, 'name': name, 'league': league, 'badge': badge};
+      required this.badge,
+      this.idLeague = ''});
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'league': league,
+        'badge': badge,
+        'idLeague': idLeague
+      };
   factory Team.fromJson(Map<String, dynamic> j) => Team(
-      id: j['id'], name: j['name'], league: j['league'], badge: j['badge']);
+      id: j['id'],
+      name: j['name'],
+      league: j['league'],
+      badge: j['badge'],
+      idLeague: j['idLeague'] ?? '');
 }
 
 class Fixture {
@@ -393,54 +404,99 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                     itemBuilder: (context, i) {
                       final t = selectedTeams[i];
                       final color = colorForTeam(t.name);
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        clipBehavior: Clip.antiAlias,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
-                        child: InkWell(
-                          onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => TeamFixturesPage(team: t))),
-                          child: Row(
-                            children: [
-                              Container(width: 6, height: 74, color: color),
-                              const SizedBox(width: 12),
-                              CircleAvatar(
-                                radius: 22,
-                                backgroundColor: color.withOpacity(0.15),
-                                child: t.badge.isNotEmpty
-                                    ? ClipOval(
-                                        child: Image.network(t.badge,
-                                            width: 34,
-                                            height: 34,
-                                            errorBuilder: (_, __, ___) =>
-                                                Icon(Icons.sports_soccer,
-                                                    color: color)))
-                                    : Icon(Icons.sports_soccer, color: color),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(t.name,
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 16)),
-                                    Text(t.league,
-                                        style: TextStyle(
-                                            color: Colors.grey.shade600)),
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: [
+                            BoxShadow(
+                              color: color.withOpacity(0.25),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(18),
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
+                            onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) =>
+                                        TeamFixturesPage(team: t))),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                  colors: [
+                                    color.withOpacity(0.14),
+                                    color.withOpacity(0.02),
                                   ],
                                 ),
                               ),
-                              const Icon(Icons.chevron_right),
-                              IconButton(
-                                  icon: const Icon(Icons.delete_outline,
-                                      color: Colors.redAccent),
-                                  onPressed: () => _removeTeam(t)),
-                            ],
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 12),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 56,
+                                    height: 56,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                          color: color.withOpacity(0.4),
+                                          width: 2),
+                                      boxShadow: [
+                                        BoxShadow(
+                                            color: color.withOpacity(0.2),
+                                            blurRadius: 6)
+                                      ],
+                                    ),
+                                    child: t.badge.isNotEmpty
+                                        ? ClipOval(
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.all(6),
+                                              child: Image.network(t.badge,
+                                                  errorBuilder:
+                                                      (_, __, ___) => Icon(
+                                                          Icons.sports_soccer,
+                                                          color: color)),
+                                            ),
+                                          )
+                                        : Icon(Icons.sports_soccer,
+                                            color: color),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(t.name,
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 17)),
+                                        const SizedBox(height: 2),
+                                        Text(t.league,
+                                            style: TextStyle(
+                                                color: Colors.grey.shade600,
+                                                fontSize: 13)),
+                                      ],
+                                    ),
+                                  ),
+                                  Icon(Icons.chevron_right, color: color),
+                                  IconButton(
+                                      icon: const Icon(Icons.delete_outline,
+                                          color: Colors.redAccent),
+                                      onPressed: () => _removeTeam(t)),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       );
@@ -506,17 +562,62 @@ class TeamFixturesPage extends StatefulWidget {
   State<TeamFixturesPage> createState() => _TeamFixturesPageState();
 }
 
+class StandingRow {
+  final String rank;
+  final String teamName;
+  final String badge;
+  final String played;
+  final String win;
+  final String draw;
+  final String loss;
+  final String points;
+  StandingRow({
+    required this.rank,
+    required this.teamName,
+    required this.badge,
+    required this.played,
+    required this.win,
+    required this.draw,
+    required this.loss,
+    required this.points,
+  });
+  factory StandingRow.fromJson(Map<String, dynamic> j) => StandingRow(
+        rank: '${j['intRank'] ?? ''}',
+        teamName: j['strTeam'] ?? '',
+        badge: j['strBadge'] ?? '',
+        played: '${j['intPlayed'] ?? ''}',
+        win: '${j['intWin'] ?? ''}',
+        draw: '${j['intDraw'] ?? ''}',
+        loss: '${j['intLoss'] ?? ''}',
+        points: '${j['intPoints'] ?? ''}',
+      );
+}
+
+class PlayerInfo {
+  final String name;
+  final String position;
+  final String photo;
+  PlayerInfo({required this.name, required this.position, required this.photo});
+  factory PlayerInfo.fromJson(Map<String, dynamic> j) => PlayerInfo(
+        name: j['strPlayer'] ?? '',
+        position: j['strPosition'] ?? '',
+        photo: (j['strCutout'] ?? j['strThumb'] ?? '') as String,
+      );
+}
+
 class _TeamFixturesPageState extends State<TeamFixturesPage>
     with SingleTickerProviderStateMixin {
   late TabController tabController;
   List<Fixture> upcoming = [];
   List<Fixture> results = [];
+  List<StandingRow> standings = [];
+  List<PlayerInfo> squad = [];
   bool loading = true;
 
   @override
   void initState() {
     super.initState();
-    tabController = TabController(length: 2, vsync: this);
+    tabController = TabController(length: 4, vsync: this);
     _load();
   }
 
@@ -527,6 +628,7 @@ class _TeamFixturesPageState extends State<TeamFixturesPage>
           'https://www.thesportsdb.com/api/v1/json/3/eventsnext.php?id=${widget.team.id}'));
       final lastResp = await http.get(Uri.parse(
           'https://www.thesportsdb.com/api/v1/json/3/eventslast.php?id=${widget.team.id}'));
+
       List<Fixture> up = [];
       List<Fixture> res = [];
       if (nextResp.statusCode == 200) {
@@ -539,9 +641,36 @@ class _TeamFixturesPageState extends State<TeamFixturesPage>
         final events = data['results'] as List<dynamic>? ?? [];
         res = events.map((e) => Fixture.fromJson(e)).toList();
       }
+
+      List<StandingRow> table = [];
+      if (widget.team.idLeague.isNotEmpty) {
+        try {
+          final tableResp = await http.get(Uri.parse(
+              'https://www.thesportsdb.com/api/v1/json/3/lookuptable.php?l=${widget.team.idLeague}'));
+          if (tableResp.statusCode == 200) {
+            final data = jsonDecode(tableResp.body);
+            final rows = data['table'] as List<dynamic>? ?? [];
+            table = rows.map((r) => StandingRow.fromJson(r)).toList();
+          }
+        } catch (_) {}
+      }
+
+      List<PlayerInfo> players = [];
+      try {
+        final playersResp = await http.get(Uri.parse(
+            'https://www.thesportsdb.com/api/v1/json/3/lookup_all_players.php?id=${widget.team.id}'));
+        if (playersResp.statusCode == 200) {
+          final data = jsonDecode(playersResp.body);
+          final list = data['player'] as List<dynamic>? ?? [];
+          players = list.map((p) => PlayerInfo.fromJson(p)).toList();
+        }
+      } catch (_) {}
+
       setState(() {
         upcoming = up;
         results = res;
+        standings = table;
+        squad = players;
       });
     } catch (_) {} finally {
       setState(() => loading = false);
@@ -552,25 +681,71 @@ class _TeamFixturesPageState extends State<TeamFixturesPage>
   Widget build(BuildContext context) {
     final color = colorForTeam(widget.team.name);
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.team.name),
-        bottom: TabBar(controller: tabController, tabs: const [
-          Tab(text: 'Upcoming'),
-          Tab(text: 'Results'),
-        ]),
-      ),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _load,
-              child: TabBarView(
-                controller: tabController,
-                children: [
-                  _fixtureList(upcoming, color, showCountdown: true),
-                  _fixtureList(results, color, showScore: true),
-                ],
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          SliverAppBar(
+            pinned: true,
+            expandedHeight: 150,
+            backgroundColor: color,
+            flexibleSpace: FlexibleSpaceBar(
+              titlePadding: const EdgeInsets.only(left: 56, bottom: 14),
+              title: Text(widget.team.name,
+                  style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white)),
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [color, color.withOpacity(0.65)],
+                  ),
+                ),
+                child: Center(
+                  child: widget.team.badge.isNotEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.only(top: 24, bottom: 34),
+                          child: Image.network(widget.team.badge,
+                              height: 64,
+                              errorBuilder: (_, __, ___) => const Icon(
+                                  Icons.sports_soccer,
+                                  size: 56,
+                                  color: Colors.white)),
+                        )
+                      : const SizedBox(),
+                ),
               ),
             ),
+            bottom: TabBar(
+              controller: tabController,
+              indicatorColor: Colors.white,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white70,
+              tabs: const [
+                Tab(text: 'Upcoming'),
+                Tab(text: 'Results'),
+                Tab(text: 'Table'),
+                Tab(text: 'Squad'),
+              ],
+            ),
+          ),
+        ],
+        body: loading
+            ? const Center(child: CircularProgressIndicator())
+            : RefreshIndicator(
+                onRefresh: _load,
+                child: TabBarView(
+                  controller: tabController,
+                  children: [
+                    _fixtureList(upcoming, color, showCountdown: true),
+                    _fixtureList(results, color, showScore: true),
+                    _standingsList(color),
+                    _squadList(color),
+                  ],
+                ),
+              ),
+      ),
     );
   }
 
@@ -592,13 +767,19 @@ class _TeamFixturesPageState extends State<TeamFixturesPage>
       itemBuilder: (context, i) {
         final f = list[i];
         return Card(
+          elevation: 1.5,
           margin: const EdgeInsets.only(bottom: 10),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           child: ListTile(
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             leading: CircleAvatar(
               backgroundColor: color.withOpacity(0.15),
               child: Icon(Icons.sports_soccer, color: color),
             ),
-            title: Text('${f.homeTeam} vs ${f.awayTeam}'),
+            title: Text('${f.homeTeam} vs ${f.awayTeam}',
+                style: const TextStyle(fontWeight: FontWeight.w600)),
             subtitle: Text('${f.league}\n${formatDateTime(f.dateTimeUtc)}'),
             isThreeLine: true,
             trailing: showScore
@@ -612,6 +793,109 @@ class _TeamFixturesPageState extends State<TeamFixturesPage>
                     style: TextStyle(
                         color: color, fontWeight: FontWeight.w600),
                   ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _standingsList(Color color) {
+    if (standings.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: const [
+          SizedBox(height: 100),
+          Center(child: Text('Table not available for this competition.')),
+        ],
+      );
+    }
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(12),
+      itemCount: standings.length,
+      itemBuilder: (context, i) {
+        final row = standings[i];
+        final isCurrent =
+            row.teamName.toLowerCase() == widget.team.name.toLowerCase();
+        return Container(
+          margin: const EdgeInsets.only(bottom: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: isCurrent ? color.withOpacity(0.12) : null,
+            borderRadius: BorderRadius.circular(10),
+            border: isCurrent ? Border.all(color: color) : null,
+          ),
+          child: Row(
+            children: [
+              SizedBox(
+                  width: 24,
+                  child: Text(row.rank,
+                      style: const TextStyle(fontWeight: FontWeight.bold))),
+              const SizedBox(width: 8),
+              row.badge.isNotEmpty
+                  ? Image.network(row.badge,
+                      width: 24,
+                      height: 24,
+                      errorBuilder: (_, __, ___) =>
+                          const Icon(Icons.sports_soccer, size: 20))
+                  : const Icon(Icons.sports_soccer, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                  child: Text(row.teamName,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          fontWeight:
+                              isCurrent ? FontWeight.bold : FontWeight.normal))),
+              SizedBox(
+                  width: 28,
+                  child: Text(row.played,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey.shade600))),
+              SizedBox(
+                  width: 34,
+                  child: Text(row.points,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontWeight: FontWeight.bold))),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _squadList(Color color) {
+    if (squad.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: const [
+          SizedBox(height: 100),
+          Center(child: Text('Squad not available.')),
+        ],
+      );
+    }
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(12),
+      itemCount: squad.length,
+      itemBuilder: (context, i) {
+        final p = squad[i];
+        return Card(
+          elevation: 1.5,
+          margin: const EdgeInsets.only(bottom: 8),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: color.withOpacity(0.15),
+              backgroundImage:
+                  p.photo.isNotEmpty ? NetworkImage(p.photo) : null,
+              child: p.photo.isEmpty
+                  ? Icon(Icons.person, color: color)
+                  : null,
+            ),
+            title: Text(p.name,
+                style: const TextStyle(fontWeight: FontWeight.w600)),
+            subtitle: Text(p.position),
           ),
         );
       },
@@ -649,6 +933,7 @@ class _SearchTeamPageState extends State<SearchTeamPage> {
                         name: t['strTeam'] ?? '',
                         league: t['strLeague'] ?? '',
                         badge: t['strTeamBadge'] ?? '',
+                        idLeague: t['idLeague']?.toString() ?? '',
                       ))
                   .toList();
         });
