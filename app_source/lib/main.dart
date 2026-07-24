@@ -6,7 +6,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:permission_handler/permission_handler.dart';
-import 'package:workmanager/workmanager.dart';
 
 final FlutterLocalNotificationsPlugin notificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -61,35 +60,8 @@ Future<int> scheduleAllReminders(List<Team> teams, int offsetMinutes) async {
   return scheduled;
 }
 
-@pragma('vm:entry-point')
-void callbackDispatcher() {
-  Workmanager().executeTask((task, inputData) async {
-    try {
-      tzdata.initializeTimeZones();
-      const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-      const initSettings = InitializationSettings(android: androidInit);
-      await notificationsPlugin.initialize(initSettings);
-
-      final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getStringList(kSelectedTeamsKey) ?? [];
-      final teams = raw.map((s) => Team.fromJson(jsonDecode(s))).toList();
-      final offset = prefs.getInt(kReminderOffsetKey) ?? kDefaultOffsetMinutes;
-      await scheduleAllReminders(teams, offset);
-    } catch (_) {}
-    return Future.value(true);
-  });
-}
-
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  Workmanager().initialize(callbackDispatcher);
-  Workmanager().registerPeriodicTask(
-    'daily-match-sync',
-    'dailySyncTask',
-    frequency: const Duration(hours: 24),
-    constraints: Constraints(networkType: NetworkType.connected),
-    existingWorkPolicy: ExistingPeriodicWorkPolicy.replace,
-  );
   runApp(const MatchReminderApp());
 }
 
