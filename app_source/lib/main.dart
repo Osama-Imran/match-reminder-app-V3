@@ -88,7 +88,7 @@ void main() {
     'dailySyncTask',
     frequency: const Duration(hours: 24),
     constraints: Constraints(networkType: NetworkType.connected),
-    existingWorkPolicy: ExistingWorkPolicy.replace,
+    existingWorkPolicy: ExistingPeriodicWorkPolicy.replace,
   );
   runApp(const MatchReminderApp());
 }
